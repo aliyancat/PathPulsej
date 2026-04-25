@@ -173,7 +173,8 @@ def plot_feature_importance(importances: Dict[str, float]) -> plt.Figure:
 # App Header
 # ---------------------------------------------------------------------------
 def get_base64_of_bin_file(bin_file):
-    with open(bin_file, 'rb') as f:
+    bin_path = Path(__file__).parent / bin_file
+    with open(bin_path, 'rb') as f:
         data = f.read()
     return base64.b64encode(data).decode()
 

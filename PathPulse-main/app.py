@@ -183,21 +183,22 @@ page_logo_base64 = get_base64_of_bin_file("page_logo.png")
 
 st.markdown(
     f"""
+    <div class="ambient-glow"></div>
+    <div class="ambient-glow glow-2"></div>
     <div class="custom-header">
         <img src="data:image/png;base64,{page_logo_base64}" class="header-logo" alt="Logo" />
         <span class="header-title">Path<span style="font-weight: 700;">Pulse</span></span>
     </div>
-    <div style="text-align: center; margin-bottom: 2rem; padding-top: 1rem;">
+    <div class="hero-container" style="text-align: center; margin-bottom: 2rem; padding-top: 1rem; position: relative; z-index: 10;">
         <div class="liquid-glass-logo-container">
             <img src="data:image/png;base64,{logo_base64}" class="liquid-glass-logo" alt="PathPulse Logo" />
         </div>
-        <p style="
-            font-size: 1.05rem;
-            color: #d1d5db;
-            font-weight: 400;
-            line-height: 1.50;
-            margin-top: 1.5rem;
-        ">
+        <h1 class="hero-text-glow" style="margin-top: 1.5rem; font-size: 2.5rem; font-weight: 800; letter-spacing: 2px; color: white;">
+            PATHPULSE NEURAL <span style="color: #ff2a2a; text-shadow: 0 0 15px rgba(255,42,42,0.8);">ENGINE</span>
+        </h1>
+        <p style="font-size: 1.15rem; color: #d1d5db; max-width: 600px; margin: 0.5rem auto 2.5rem; opacity: 0.8;">
+            Advanced Hospital Navigation & ML Risk Prediction
+        </p>
     </div>
     """,
     unsafe_allow_html=True,
@@ -452,9 +453,10 @@ with tab_pred:
             if risk_class == 1:
                 st.markdown(
                     f"""
-                    <div class="risk-high">
-                        <h2 style="color: #fa7faa; margin: 0 0 10px 0; font-size: 2.2rem;">High Risk Detected</h2>
-                        <p style="font-size: 1.15rem; color: #e5e7eb; margin: 0;">
+                    <div class="risk-high neon-pulse-high">
+                        <div class="pulse-ring red-ring"></div>
+                        <h2 style="color: #ff4d4d; margin: 0 0 10px 0; font-size: 2.2rem; text-shadow: 0 0 15px rgba(255, 77, 77, 0.6); position: relative; z-index: 2;">High Risk Detected</h2>
+                        <p style="font-size: 1.15rem; color: #e5e7eb; margin: 0; position: relative; z-index: 2;">
                             The model predicts a <strong style="color: #ffffff; font-size: 1.25rem;">{prob*100:.1f}%</strong> probability of heart disease.
                         </p>
                     </div>
@@ -464,9 +466,10 @@ with tab_pred:
             else:
                 st.markdown(
                     f"""
-                    <div class="risk-low">
-                        <h2 style="color: #c2ef4e; margin: 0 0 10px 0; font-size: 2.2rem;">Low Risk</h2>
-                        <p style="font-size: 1.15rem; color: #e5e7eb; margin: 0;">
+                    <div class="risk-low neon-pulse-low">
+                        <div class="pulse-ring green-ring"></div>
+                        <h2 style="color: #4dfa7f; margin: 0 0 10px 0; font-size: 2.2rem; text-shadow: 0 0 15px rgba(77, 250, 127, 0.6); position: relative; z-index: 2;">Low Risk</h2>
+                        <p style="font-size: 1.15rem; color: #e5e7eb; margin: 0; position: relative; z-index: 2;">
                             The model predicts a <strong style="color: #ffffff; font-size: 1.25rem;">{prob*100:.1f}%</strong> probability of heart disease.
                         </p>
                     </div>

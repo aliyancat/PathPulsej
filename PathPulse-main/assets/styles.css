@@ -378,13 +378,21 @@ hr {
 
 /* === GLASS CARD UTILITY (for use with st.markdown) === */
 .glass-card {
-    background: var(--glass-white) !important;
-    backdrop-filter: blur(18px) saturate(180%) !important;
-    -webkit-backdrop-filter: blur(18px) saturate(180%) !important;
-    border: 1px solid var(--glass-dark) !important;
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.01)) !important;
+    backdrop-filter: blur(24px) saturate(200%) !important;
+    -webkit-backdrop-filter: blur(24px) saturate(200%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.2) !important;
+    border-left: 1px solid rgba(255, 255, 255, 0.15) !important;
     border-radius: var(--radius-lg) !important;
     padding: 24px !important;
-    box-shadow: var(--shadow-card) !important;
+    box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5) !important;
+    transition: transform 0.3s ease, box-shadow 0.3s ease !important;
+}
+
+.glass-card:hover {
+    transform: translateY(-5px) !important;
+    box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.7), 0 0 20px rgba(255, 42, 42, 0.1) !important;
 }
 
 /* === HERO TITLE UTILITY === */
@@ -420,19 +428,25 @@ hr {
 
 /* === RISK RESULT CARDS === */
 .risk-low {
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02)) !important;
-    border: 1px solid rgba(255, 255, 255, 0.20) !important;
+    background: linear-gradient(135deg, rgba(77, 250, 127, 0.08), rgba(77, 250, 127, 0.02)) !important;
+    border: 1px solid rgba(77, 250, 127, 0.30) !important;
     border-radius: var(--radius-lg) !important;
-    padding: 24px 32px !important;
+    padding: 32px !important;
     text-align: center;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(77, 250, 127, 0.1) !important;
 }
 
 .risk-high {
-    background: linear-gradient(135deg, rgba(255, 42, 42, 0.10), rgba(255, 42, 42, 0.03)) !important;
-    border: 1px solid rgba(255, 42, 42, 0.30) !important;
+    background: linear-gradient(135deg, rgba(255, 77, 77, 0.12), rgba(255, 77, 77, 0.04)) !important;
+    border: 1px solid rgba(255, 77, 77, 0.40) !important;
     border-radius: var(--radius-lg) !important;
-    padding: 24px 32px !important;
+    padding: 32px !important;
     text-align: center;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(255, 77, 77, 0.15) !important;
 }
 
 /* === HIDE STREAMLIT DEFAULTS === */
@@ -521,4 +535,66 @@ header[data-testid="stHeader"] {
     font-size: 1.25rem;
     font-weight: 400;
     letter-spacing: -0.01em;
+}
+
+/* === AMBIENT GLOW BACKGROUND === */
+.ambient-glow {
+    position: fixed;
+    top: -20vh;
+    left: -10vw;
+    width: 60vw;
+    height: 60vh;
+    background: radial-gradient(circle, rgba(255, 42, 42, 0.08) 0%, rgba(18, 18, 18, 0) 70%);
+    z-index: 0;
+    pointer-events: none;
+    animation: drift 15s ease-in-out infinite alternate;
+}
+
+.ambient-glow.glow-2 {
+    top: 50vh;
+    left: 60vw;
+    width: 50vw;
+    height: 50vh;
+    background: radial-gradient(circle, rgba(77, 250, 127, 0.05) 0%, rgba(18, 18, 18, 0) 70%);
+    animation: drift-reverse 20s ease-in-out infinite alternate;
+}
+
+@keyframes drift {
+    0% { transform: translate(0, 0) scale(1); }
+    100% { transform: translate(5vw, 5vh) scale(1.1); }
+}
+
+@keyframes drift-reverse {
+    0% { transform: translate(0, 0) scale(1); }
+    100% { transform: translate(-5vw, -5vh) scale(1.15); }
+}
+
+/* === PULSING RINGS FOR RESULTS === */
+.pulse-ring {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    z-index: 1;
+    animation: pulsate 3s cubic-bezier(0.25, 1, 0.5, 1) infinite;
+    opacity: 0;
+}
+
+.red-ring {
+    box-shadow: 0 0 50px 30px rgba(255, 77, 77, 0.2);
+    border: 2px solid rgba(255, 77, 77, 0.5);
+}
+
+.green-ring {
+    box-shadow: 0 0 50px 30px rgba(77, 250, 127, 0.2);
+    border: 2px solid rgba(77, 250, 127, 0.5);
+}
+
+@keyframes pulsate {
+    0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+    50% { opacity: 1; }
+    100% { transform: translate(-50%, -50%) scale(2.5); opacity: 0; }
 }

@@ -1,0 +1,23 @@
+# Documentation & Planning Files
+plan.md
+architecture.md
+design.md
+prd.md
+*.docx
+
+# Python Cache & Environment Files
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+env/
+.env
+.pytest_cache/
+.ipynb_checkpoints/
+
+# OS Generated Files
+.DS_Store
+Thumbs.db
+
+# Note: We are explicitly allowing the models/ directory and assets/ 
+# because they are required for the Streamlit app to run smoothly without retraining.

@@ -642,108 +642,190 @@ with tab_nav:
 
 # -- Risk Prediction Tab ---------------------------------------------------
 with tab_pred:
-    st.markdown(
-        """
-        <div class="glass-card" style="margin-bottom: 24px;">
-            <h2 style="font-size: 1.50rem; font-weight: 600; color: #ffffff; margin-bottom: 8px;">
-                Heart Disease Risk Assessment
-            </h2>
-            <p style="font-size: 0.95rem; color: #e5e7eb; margin: 0;">
-                Enter patient clinical data below to receive an ML-backed
-                risk prediction powered by a Random Forest classifier.
-            </p>
+    # Section header
+    st.markdown("""
+    <div class="glass-card card-highlight" style="margin-bottom: 24px;">
+        <div style="display: flex; align-items: center; gap: 16px;">
+            <div style="font-size: 2rem;">❤️</div>
+            <div>
+                <h2 style="font-size: 1.5rem; font-weight: 700; color: #ffffff; margin: 0;">
+                    Heart Disease Risk Assessment
+                </h2>
+                <p style="font-size: 0.9rem; color: #a1a1aa; margin: 4px 0 0 0;">
+                    ML-powered risk analysis using Random Forest classifier
+                </p>
+            </div>
         </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-    col_pred_form, col_pred_res = st.columns([1, 1.2])
-
-    with col_pred_form:
+    </div>
+    """, unsafe_allow_html=True)
+    
+    col_form, col_results = st.columns([1, 1.3])
+    
+    with col_form:
         with st.form("prediction_form"):
-            st.markdown("<h3 style='color: white; margin-bottom: 16px;'>Patient Vitals</h3>", unsafe_allow_html=True)
+            st.markdown("""
+            <div class="form-section">
+                <div class="form-section-title">📋 Patient Information</div>
+            """, unsafe_allow_html=True)
             
-            # Using 2 columns for dense layout of 13 fields
             c1, c2 = st.columns(2)
             
             patient_data = {}
             with c1:
-                patient_data["age"] = st.number_input(FEATURE_LABELS["age"], min_value=1, max_value=120, value=HEALTHY_DEFAULTS["age"])
-                patient_data["sex"] = st.selectbox(FEATURE_LABELS["sex"], options=[0, 1], format_func=lambda x: "Male" if x==1 else "Female", index=1 if HEALTHY_DEFAULTS["sex"]==1 else 0)
-                patient_data["trestbps"] = st.number_input(FEATURE_LABELS["trestbps"], min_value=50, max_value=250, value=HEALTHY_DEFAULTS["trestbps"])
-                patient_data["chol"] = st.number_input(FEATURE_LABELS["chol"], min_value=100, max_value=600, value=HEALTHY_DEFAULTS["chol"])
-                patient_data["fbs"] = st.selectbox(FEATURE_LABELS["fbs"], options=[0, 1], format_func=lambda x: "Yes (> 120)" if x==1 else "No", index=HEALTHY_DEFAULTS["fbs"])
-                patient_data["thalach"] = st.number_input(FEATURE_LABELS["thalach"], min_value=60, max_value=220, value=HEALTHY_DEFAULTS["thalach"])
-                patient_data["exang"] = st.selectbox(FEATURE_LABELS["exang"], options=[0, 1], format_func=lambda x: "Yes" if x==1 else "No", index=HEALTHY_DEFAULTS["exang"])
+                patient_data["age"] = st.number_input(
+                    FEATURE_LABELS["age"], min_value=1, max_value=120, 
+                    value=HEALTHY_DEFAULTS["age"], help="Patient age in years"
+                )
+                patient_data["sex"] = st.selectbox(
+                    FEATURE_LABELS["sex"], options=[0, 1], 
+                    format_func=lambda x: "Male" if x==1 else "Female",
+                    index=1 if HEALTHY_DEFAULTS["sex"]==1 else 0
+                )
+                patient_data["trestbps"] = st.number_input(
+                    FEATURE_LABELS["trestbps"], min_value=50, max_value=250, 
+                    value=HEALTHY_DEFAULTS["trestbps"], help="Resting blood pressure (mm Hg)"
+                )
+                patient_data["chol"] = st.number_input(
+                    FEATURE_LABELS["chol"], min_value=100, max_value=600, 
+                    value=HEALTHY_DEFAULTS["chol"], help="Serum cholesterol (mg/dl)"
+                )
+                patient_data["fbs"] = st.selectbox(
+                    FEATURE_LABELS["fbs"], options=[0, 1], 
+                    format_func=lambda x: "Yes (> 120 mg/dl)" if x==1 else "No",
+                    index=HEALTHY_DEFAULTS["fbs"], help="Fasting blood sugar > 120 mg/dl"
+                )
+                patient_data["thalach"] = st.number_input(
+                    FEATURE_LABELS["thalach"], min_value=60, max_value=220, 
+                    value=HEALTHY_DEFAULTS["thalach"], help="Maximum heart rate achieved"
+                )
+                patient_data["exang"] = st.selectbox(
+                    FEATURE_LABELS["exang"], options=[0, 1], 
+                    format_func=lambda x: "Yes" if x==1 else "No",
+                    index=HEALTHY_DEFAULTS["exang"], help="Exercise induced angina"
+                )
+            
             with c2:
-                patient_data["cp"] = st.selectbox(FEATURE_LABELS["cp"], options=[0, 1, 2, 3], index=HEALTHY_DEFAULTS["cp"], help="0: Typical Angina, 1: Atypical Angina, 2: Non-anginal, 3: Asymptomatic")
-                patient_data["restecg"] = st.selectbox(FEATURE_LABELS["restecg"], options=[0, 1, 2], index=HEALTHY_DEFAULTS["restecg"])
-                patient_data["oldpeak"] = st.number_input(FEATURE_LABELS["oldpeak"], min_value=0.0, max_value=10.0, value=float(HEALTHY_DEFAULTS["oldpeak"]), step=0.1)
-                patient_data["slope"] = st.selectbox(FEATURE_LABELS["slope"], options=[0, 1, 2], index=HEALTHY_DEFAULTS["slope"])
-                patient_data["ca"] = st.selectbox(FEATURE_LABELS["ca"], options=[0, 1, 2, 3], index=HEALTHY_DEFAULTS["ca"])
-                patient_data["thal"] = st.selectbox(FEATURE_LABELS["thal"], options=[0, 1, 2, 3], index=HEALTHY_DEFAULTS["thal"], help="0: Unknown, 1: Normal, 2: Fixed Defect, 3: Reversable Defect") 
-
-            st.markdown("<br/>", unsafe_allow_html=True)
-            submit_button = st.form_submit_button("Assess Risk", use_container_width=True)
+                patient_data["cp"] = st.selectbox(
+                    FEATURE_LABELS["cp"], options=[0, 1, 2, 3], 
+                    index=HEALTHY_DEFAULTS["cp"], 
+                    help="0: Typical Angina, 1: Atypical, 2: Non-anginal, 3: Asymptomatic"
+                )
+                patient_data["restecg"] = st.selectbox(
+                    FEATURE_LABELS["restecg"], options=[0, 1, 2], 
+                    index=HEALTHY_DEFAULTS["restecg"], help="Resting ECG results"
+                )
+                patient_data["oldpeak"] = st.number_input(
+                    FEATURE_LABELS["oldpeak"], min_value=0.0, max_value=10.0, 
+                    value=float(HEALTHY_DEFAULTS["oldpeak"]), step=0.1,
+                    help="ST depression induced by exercise"
+                )
+                patient_data["slope"] = st.selectbox(
+                    FEATURE_LABELS["slope"], options=[0, 1, 2], 
+                    index=HEALTHY_DEFAULTS["slope"], help="Slope of peak exercise ST segment"
+                )
+                patient_data["ca"] = st.selectbox(
+                    FEATURE_LABELS["ca"], options=[0, 1, 2, 3], 
+                    index=HEALTHY_DEFAULTS["ca"], help="Number of major vessels (0-3)"
+                )
+                patient_data["thal"] = st.selectbox(
+                    FEATURE_LABELS["thal"], options=[0, 1, 2, 3], 
+                    index=HEALTHY_DEFAULTS["thal"],
+                    help="Thalassemia: 0=Unknown, 1=Normal, 2=Fixed, 3=Reversable"
+                )
+            
+            st.markdown("</div>", unsafe_allow_html=True)
+            
+            submit_button = st.form_submit_button("🔬 Analyze Risk", use_container_width=True)
             
             if submit_button:
                 st.session_state["pred_submitted"] = True
-                try:
-                    res = predict_risk(patient_data)
-                    st.session_state["pred_result"] = res
-                except FileNotFoundError:
-                    st.error("Model files not found! Please run `python -m prediction.train` to generate the ML models.")
-                except Exception as e:
-                    st.error(f"Prediction error: {str(e)}")
-
-    with col_pred_res:
+                with st.spinner("🧠 Processing with ML model..."):
+                    try:
+                        res = predict_risk(patient_data)
+                        st.session_state["pred_result"] = res
+                    except FileNotFoundError:
+                        st.error("⚠️ Model files not found! Please run `python -m prediction.train` first.")
+                    except Exception as e:
+                        st.error(f"Prediction error: {str(e)}")
+    
+    with col_results:
         if st.session_state["pred_submitted"] and st.session_state["pred_result"]:
             res = st.session_state["pred_result"]
             risk_class = res["risk_class"]
             prob = res["probability"]
             importances = res["feature_importance"]
+            theme = st.session_state.get("color_theme", "neon")
             
             if risk_class == 1:
-                st.markdown(
-                    f"""
-                    <div class="risk-high neon-pulse-high">
-                        <div class="pulse-ring red-ring"></div>
-                        <h2 style="color: #ff4d4d; margin: 0 0 10px 0; font-size: 2.2rem; text-shadow: 0 0 15px rgba(255, 77, 77, 0.6); position: relative; z-index: 2;">High Risk Detected</h2>
-                        <p style="font-size: 1.15rem; color: #e5e7eb; margin: 0; position: relative; z-index: 2;">
-                            The model predicts a <strong style="color: #ffffff; font-size: 1.25rem;">{prob*100:.1f}%</strong> probability of heart disease.
-                        </p>
-                    </div>
-                    """,
-                    unsafe_allow_html=True
-                )
+                st.markdown(f"""
+                <div class="risk-high animate-scale-in">
+                    <div class="pulse-ring red-ring"></div>
+                    <div style="font-size: 3rem; margin-bottom: 8px;">⚠️</div>
+                    <h2 style="color: #ef4444; margin: 0 0 10px 0; font-size: 2rem;">
+                        High Risk Detected
+                    </h2>
+                    <p style="font-size: 1.1rem; color: #e5e7eb; margin: 0;">
+                        Predicted probability: <strong style="color: #ffffff; font-size: 1.4rem;">{prob*100:.1f}%</strong>
+                    </p>
+                    <p style="font-size: 0.85rem; color: #a1a1aa; margin: 16px 0 0 0;">
+                        Recommendation: Consult a cardiologist for further evaluation
+                    </p>
+                </div>
+                """, unsafe_allow_html=True)
             else:
-                st.markdown(
-                    f"""
-                    <div class="risk-low neon-pulse-low">
-                        <div class="pulse-ring green-ring"></div>
-                        <h2 style="color: #4dfa7f; margin: 0 0 10px 0; font-size: 2.2rem; text-shadow: 0 0 15px rgba(77, 250, 127, 0.6); position: relative; z-index: 2;">Low Risk</h2>
-                        <p style="font-size: 1.15rem; color: #e5e7eb; margin: 0; position: relative; z-index: 2;">
-                            The model predicts a <strong style="color: #ffffff; font-size: 1.25rem;">{prob*100:.1f}%</strong> probability of heart disease.
-                        </p>
-                    </div>
-                    """,
-                    unsafe_allow_html=True
-                )
-            
-            st.markdown("<br/>", unsafe_allow_html=True)
-            st.markdown(
-                """
-                <div class="glass-card" style="padding: 16px 24px;">
-                    <h3 style="color: white; margin-top: 0;">Feature Importances</h3>
-                    <p style="color: #e5e7eb; font-size: 0.9rem;">The factors most heavily influencing this prediction model.</p>
+                st.markdown(f"""
+                <div class="risk-low animate-scale-in">
+                    <div class="pulse-ring green-ring"></div>
+                    <div style="font-size: 3rem; margin-bottom: 8px;">✅</div>
+                    <h2 style="color: #10b981; margin: 0 0 10px 0; font-size: 2rem;">
+                        Low Risk
+                    </h2>
+                    <p style="font-size: 1.1rem; color: #e5e7eb; margin: 0;">
+                        Predicted probability: <strong style="color: #ffffff; font-size: 1.4rem;">{prob*100:.1f}%</strong>
+                    </p>
+                    <p style="font-size: 0.85rem; color: #a1a1aa; margin: 16px 0 0 0;">
+                        Continue maintaining a healthy lifestyle
+                    </p>
                 </div>
                 """, unsafe_allow_html=True)
             
-            fig_importances = plot_feature_importance(importances)
+            st.markdown("<br/>", unsafe_allow_html=True)
+            
+            # Risk Gauge
+            st.markdown("""
+            <div class="glass-card" style="padding: 20px;">
+                <h3 style="color: white; margin-top: 0; font-size: 1.1rem;">📊 Risk Distribution</h3>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            fig_gauge = plot_risk_gauge(prob)
+            st.pyplot(fig_gauge)
+            plt.close(fig_gauge)
+            
+            st.markdown("<br/>", unsafe_allow_html=True)
+            
+            # Feature Importance
+            st.markdown("""
+            <div class="glass-card" style="padding: 20px;">
+                <h3 style="color: white; margin-top: 0; font-size: 1.1rem;">📈 Feature Importances</h3>
+                <p style="color: #a1a1aa; font-size: 0.85rem;">Top factors influencing this prediction</p>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            fig_importances = plot_feature_importance_advanced(importances, theme)
             st.pyplot(fig_importances)
             plt.close(fig_importances)
         else:
-            st.info("Submit the patient vitals form to see the prediction results and feature analysis.")
+            # Empty state
+            st.markdown("""
+            <div class="glass-card" style="text-align: center; padding: 60px 40px;">
+                <div style="font-size: 4rem; margin-bottom: 16px; opacity: 0.5;">🔍</div>
+                <h3 style="color: #a1a1aa; margin-bottom: 8px;">No Prediction Yet</h3>
+                <p style="color: #71717a; font-size: 0.9rem;">
+                    Enter patient information and click "Analyze Risk" to get predictions
+                </p>
+            </div>
+            """, unsafe_allow_html=True)
 
 # ---------------------------------------------------------------------------
 # Footer

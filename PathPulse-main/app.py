@@ -372,88 +372,138 @@ tab_nav, tab_pred = st.tabs([" 🚗 Navigation", " ❤️ Risk Prediction"])
 
 # -- Navigation Tab --------------------------------------------------------
 with tab_nav:
-    st.markdown(
-        """
-        <div class="glass-card" style="margin-bottom: 24px;">
-            <h2 style="font-size: 1.50rem; font-weight: 600; color: #ffffff; margin-bottom: 8px;">
-                Hospital Pathfinder
-            </h2>
-            <p style="font-size: 0.95rem; color: #e5e7eb; margin: 0;">
-                Select a destination department and algorithm to find the optimal
-                route from the Dispensary through the hospital grid.
-            </p>
+    # Section header
+    st.markdown("""
+    <div class="glass-card card-highlight" style="margin-bottom: 24px;">
+        <div style="display: flex; align-items: center; gap: 16px;">
+            <div style="font-size: 2rem;">🏥</div>
+            <div>
+                <h2 style="font-size: 1.5rem; font-weight: 700; color: #ffffff; margin: 0;">
+                    Hospital Path Finder
+                </h2>
+                <p style="font-size: 0.9rem; color: #a1a1aa; margin: 4px 0 0 0;">
+                    Navigate using advanced pathfinding algorithms with customizable visualization
+                </p>
+            </div>
         </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-    col_nav_controls, col_nav_plot = st.columns([1, 2])
+    </div>
+    """, unsafe_allow_html=True)
     
-    with col_nav_controls:
-        # --- ROOM LOCATION EDITOR ---
-        with st.expander("Customize Rooms"):
-            st.markdown("<p style='font-size: 0.85rem; color: #d1d5db; margin-bottom: 12px;'>Modify the grid coordinates (0-19) for any room. Ensure the cell is not a wall!</p>", unsafe_allow_html=True)
+    col_controls, col_visualization = st.columns([1, 2.2])
+    
+    with col_controls:
+        # === Pathfinding Controls ===
+        st.markdown("""
+        <div class="form-section">
+            <div class="form-section-title">🎯 Route Configuration</div>
+        """, unsafe_allow_html=True)
+        
+        all_rooms = list(st.session_state["custom_rooms"].keys())
+        curr_start = st.session_state.get("nav_start", START_ROOM)
+        start_idx = all_rooms.index(curr_start) if curr_start in all_rooms else 0
+        
+        st.session_state["nav_start"] = st.selectbox(
+            "📍 Start Location", options=all_rooms, index=start_idx,
+            help="Select the starting room for navigation"
+        )
+        
+        destinations = [rm for rm in all_rooms if rm != st.session_state["nav_start"]]
+        curr_dest = st.session_state["nav_destination"]
+        dest_idx = destinations.index(curr_dest) if curr_dest in destinations else 0
+        
+        st.session_state["nav_destination"] = st.selectbox(
+            "🏁 Destination", options=destinations, index=dest_idx,
+            help="Select the destination room"
+        )
+        
+        algo_options = {"A* (Optimal Path)": "A*", "Greedy Best-First": "Greedy BFS"}
+        current_algo = st.session_state["nav_algorithm"]
+        algo_idx = 0 if current_algo == "A*" else 1
+        
+        selected_algo = st.selectbox(
+            "⚡ Algorithm", options=list(algo_options.keys()), index=algo_idx,
+            help="Choose the pathfinding algorithm"
+        )
+        st.session_state["nav_algorithm"] = algo_options[selected_algo]
+        
+        st.markdown("</div>", unsafe_allow_html=True)
+        
+        # === Animation Controls ===
+        st.markdown("""
+        <div class="form-section" style="margin-top: 16px;">
+            <div class="form-section-title">🎬 Animation Settings</div>
+        """, unsafe_allow_html=True)
+        
+        st.session_state["anim_delay"] = st.slider(
+            "⏱️ Animation Speed (ms)", 
+            min_value=0, max_value=300, 
+            value=st.session_state.get("anim_delay", 50), 
+            step=10,
+            help="Delay between animation frames. Set 0 for instant display."
+        )
+        
+        st.markdown("</div>", unsafe_allow_html=True)
+        
+        # === Graph Customization ===
+        with st.expander("⚙️ Customize Visualization"):
+            theme_options = list(GRAPH_THEMES.keys())
+            current_theme = st.session_state.get("color_theme", "neon")
+            theme_idx = theme_options.index(current_theme) if current_theme in theme_options else 0
+            
+            st.session_state["color_theme"] = st.selectbox(
+                "🎨 Color Theme", options=theme_options, index=theme_idx,
+                help="Select the color scheme for the visualization"
+            )
+            
+            st.markdown("<br/><div class='graph-options-title'>Display Options</div>", unsafe_allow_html=True)
+            
+            col1, col2 = st.columns(2)
+            with col1:
+                st.session_state["show_explored"] = st.checkbox("Show Explored", value=st.session_state.get("show_explored", True))
+                st.session_state["show_labels"] = st.checkbox("Show Labels", value=st.session_state.get("show_labels", True))
+            with col2:
+                st.session_state["show_path"] = st.checkbox("Show Path", value=st.session_state.get("show_path", True))
+                st.session_state["show_legend"] = st.checkbox("Show Legend", value=st.session_state.get("show_legend", True))
+            
+            st.markdown("<br/><div class='graph-options-title'>Size Adjustments</div>", unsafe_allow_html=True)
+            st.session_state["node_size"] = st.slider("Node Size", 8, 30, st.session_state.get("node_size", 18), 2)
+            st.session_state["path_width"] = st.slider("Path Width", 1, 10, st.session_state.get("path_width", 4), 1)
+            st.session_state["explored_alpha"] = st.slider("Explored Opacity", 0.1, 1.0, st.session_state.get("explored_alpha", 0.6), 0.1)
+        
+        # === Room Customization ===
+        with st.expander("🏗️ Customize Room Positions"):
+            st.markdown("<p style='color: #a1a1aa; font-size: 0.85rem; margin-bottom: 16px;'>Adjust room coordinates on the grid (0-19)</p>", unsafe_allow_html=True)
             
             edited_rooms = {}
             for room, (orig_r, orig_c) in st.session_state["custom_rooms"].items():
                 c1, c2, c3 = st.columns([2, 1, 1])
-                c1.markdown(f"<div style='font-size: 0.85rem; padding-top: 8px;'>{room}</div>", unsafe_allow_html=True)
-                new_r = c2.number_input(f"Row", min_value=0, max_value=19, value=orig_r, key=f"r_{room}", label_visibility="collapsed")
-                new_c = c3.number_input(f"Col", min_value=0, max_value=19, value=orig_c, key=f"c_{room}", label_visibility="collapsed")
+                c1.markdown(f"<div style='font-size: 0.85rem; padding-top: 12px; color: #ffffff;'>{room}</div>", unsafe_allow_html=True)
+                new_r = c2.number_input("Row", min_value=0, max_value=19, value=orig_r, key=f"r_{room}", label_visibility="collapsed")
+                new_c = c3.number_input("Col", min_value=0, max_value=19, value=orig_c, key=f"c_{room}", label_visibility="collapsed")
                 edited_rooms[room] = (new_r, new_c)
             
-            if st.button("Update Layout", type="secondary", use_container_width=True):
+            if st.button("💾 Update Layout", use_container_width=True, type="primary"):
                 valid = True
                 for rm, (nr, nc) in edited_rooms.items():
                     if HOSPITAL_GRID[nr, nc] == 1:
-                        st.error(f"Cannot place **{rm}** at ({nr}, {nc}) because it is a wall.")
+                        st.error(f"❌ Cannot place **{rm}** at ({nr}, {nc}) - it's a wall!")
                         valid = False
                         break
                 
                 if valid:
                     st.session_state["custom_rooms"] = edited_rooms
-                    st.session_state["nav_result"] = None  # Reset path on map change
-                    st.success("Layout updated successfully!")
+                    st.session_state["nav_result"] = None
+                    st.success("✅ Layout updated successfully!")
                     st.rerun()
-
-        # Form-like inputs without actual st.form, as we want immediate response or simple button
-        all_rooms = list(st.session_state["custom_rooms"].keys())
-        curr_start = st.session_state.get("nav_start", START_ROOM)
         
-        st.session_state["nav_start"] = st.selectbox(
-            "Start Room",
-            options=all_rooms,
-            index=all_rooms.index(curr_start) if curr_start in all_rooms else 0
-        )
+        # === Find Path Button ===
+        st.markdown("<br/>", unsafe_allow_html=True)
         
-        destinations = [rm for rm in all_rooms if rm != st.session_state["nav_start"]]
-        curr_dest = st.session_state["nav_destination"]
-        
-        st.session_state["nav_destination"] = st.selectbox(
-            "Destination Room",
-            options=destinations,
-            index=destinations.index(curr_dest) if curr_dest in destinations else 0
-        )
-        
-        st.session_state["nav_algorithm"] = st.selectbox(
-            "Search Algorithm",
-            options=["A*", "Greedy BFS"],
-            index=0 if st.session_state["nav_algorithm"] == "A*" else 1
-        )
-        
-        st.session_state["anim_delay"] = st.slider(
-            "Animation Delay (ms)", 
-            min_value=0, 
-            max_value=200, 
-            value=st.session_state.get("anim_delay", 0), 
-            step=10,
-            help="Set > 0 to watch the algorithm explore the map in real-time."
-        )
-        
-        if st.button("Find Path", type="primary", use_container_width=True):
-            with st.spinner("Calculating optimal route..."):
+        if st.button("🚀 Find Optimal Path", use_container_width=True, type="primary"):
+            with st.spinner("🧠 Computing optimal route..."):
                 start_coords = st.session_state["custom_rooms"][st.session_state["nav_start"]]
                 goal_coords = st.session_state["custom_rooms"][st.session_state["nav_destination"]]
+                
                 try:
                     if st.session_state["nav_algorithm"] == "A*":
                         path, exp_cnt, exp_ord = astar.search(HOSPITAL_GRID, start_coords, goal_coords)
@@ -472,19 +522,53 @@ with tab_nav:
                 except Exception as e:
                     st.error(f"Error during pathfinding: {str(e)}")
                     
+        # === Display Results ===
         if st.session_state["nav_result"]:
             res = st.session_state["nav_result"]
-            st.markdown("<br/>", unsafe_allow_html=True)
+            st.markdown("<hr style='margin: 24px 0; border-color: rgba(255,255,255,0.1);'/>", unsafe_allow_html=True)
+            
             if res["path"]:
-                st.metric(label="Path Length (Steps)", value=len(res["path"]) - 1)
-                st.metric(label="Nodes Explored", value=res["explored_count"])
-                st.success(f"Route found from **{res['start']}** to **{res['destination']}** using **{res['algorithm']}**.")
+                col1, col2, col3 = st.columns(3)
+                theme_colors = GRAPH_THEMES.get(st.session_state.get("color_theme", "neon"), GRAPH_THEMES["neon"])
+                
+                with col1:
+                    st.markdown(f"""
+                    <div class="stat-card">
+                        <div class="stat-value" style="background: {theme_colors['path']}; -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                            {len(res['path']) - 1}
+                        </div>
+                        <div class="stat-label">Path Steps</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                
+                with col2:
+                    st.markdown(f"""
+                    <div class="stat-card">
+                        <div class="stat-value" style="background: {theme_colors['explored']}; -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                            {res['explored_count']}
+                        </div>
+                        <div class="stat-label">Nodes Explored</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                
+                with col3:
+                    efficiency = (len(res['path']) - 1) / res['explored_count'] * 100 if res['explored_count'] > 0 else 0
+                    st.markdown(f"""
+                    <div class="stat-card">
+                        <div class="stat-value" style="background: {theme_colors['start']}; -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                            {efficiency:.1f}%
+                        </div>
+                        <div class="stat-label">Efficiency</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                
+                st.success(f"✨ Route found from **{res['start']}** to **{res['destination']}** using **{res['algorithm']}**")
             else:
-                st.metric(label="Nodes Explored", value=res["explored_count"])
-                st.error("No valid path exists to the selected destination.")
-
-    with col_nav_plot:
+                st.error("❌ No valid path exists to the selected destination.")
+    
+    with col_visualization:
         plot_placeholder = st.empty()
+        theme = st.session_state.get("color_theme", "neon")
         
         if st.session_state["nav_result"]:
             res = st.session_state["nav_result"]
@@ -492,57 +576,65 @@ with tab_nav:
             if st.session_state.get("animate_next") and st.session_state.get("anim_delay", 0) > 0:
                 delay_sec = st.session_state["anim_delay"] / 1000.0
                 explored_so_far = []
+                batch_size = max(1, int(10 * delay_sec + 1))
                 
-                # Batch sizes for rendering to avoid freezing on long paths
-                # If delay is very small, we update fewer times to keep it fast
-                batch_size = max(1, int(0.05 / (delay_sec + 0.001)))
+                progress_bar = st.progress(0)
+                status_text = st.empty()
                 
-                # Animate Exploration
                 for i in range(0, len(res["explored_order"]), batch_size):
                     chunk = res["explored_order"][i:i+batch_size]
                     explored_so_far.extend(chunk)
                     
-                    fig = plot_hospital_grid(
-                        path=None,
-                        explored=explored_so_far,
-                        start_room=res["start"],
-                        destination_room=res["destination"]
+                    progress = min(100, int((i + len(chunk)) / len(res["explored_order"]) * 50))
+                    progress_bar.progress(progress)
+                    status_text.text(f"🔍 Exploring... {len(explored_so_far)} nodes")
+                    
+                    fig = plot_hospital_grid_advanced(
+                        path=None, explored=explored_so_far,
+                        start_room=res["start"], destination_room=res["destination"],
+                        theme=theme
                     )
                     plot_placeholder.pyplot(fig)
                     plt.close(fig)
-                    if delay_sec > 0:
-                        time.sleep(delay_sec)
-                        
-                # Animate Path
+                    time.sleep(delay_sec)
+                
                 if res["path"]:
                     path_so_far = []
                     for i in range(len(res["path"])):
                         path_so_far.append(res["path"][i])
-                        fig = plot_hospital_grid(
-                            path=path_so_far,
-                            explored=res["explored_order"],
-                            start_room=res["start"],
-                            destination_room=res["destination"]
+                        progress = 50 + int((i + 1) / len(res["path"]) * 50)
+                        progress_bar.progress(progress)
+                        status_text.text(f"🛤️ Drawing path... {i+1}/{len(res['path'])} steps")
+                        
+                        fig = plot_hospital_grid_advanced(
+                            path=path_so_far, explored=res["explored_order"],
+                            start_room=res["start"], destination_room=res["destination"],
+                            theme=theme
                         )
                         plot_placeholder.pyplot(fig)
                         plt.close(fig)
-                        if delay_sec > 0:
                             time.sleep(delay_sec)
+                
+                progress_bar.progress(100)
+                status_text.text("✅ Pathfinding complete!")
+                time.sleep(0.5)
+                progress_bar.empty()
+                status_text.empty()
                 
                 st.session_state["animate_next"] = False
             else:
-                fig = plot_hospital_grid(
-                    path=res["path"],
-                    explored=res["explored_order"],
-                    start_room=res["start"],
-                    destination_room=res["destination"]
+                fig = plot_hospital_grid_advanced(
+                    path=res["path"], explored=res["explored_order"],
+                    start_room=res["start"], destination_room=res["destination"],
+                    theme=theme
                 )
                 plot_placeholder.pyplot(fig)
                 plt.close(fig)
         else:
-            fig = plot_hospital_grid(
+            fig = plot_hospital_grid_advanced(
                 start_room=st.session_state["nav_start"],
-                destination_room=st.session_state["nav_destination"]
+                destination_room=st.session_state["nav_destination"],
+                theme=theme
             )
             plot_placeholder.pyplot(fig)
             plt.close(fig)

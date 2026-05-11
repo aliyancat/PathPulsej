@@ -830,19 +830,13 @@ with tab_pred:
 # ---------------------------------------------------------------------------
 # Footer
 # ---------------------------------------------------------------------------
-st.markdown(
-    """
-    <hr style="margin-top: 64px;" />
-    <p style="
-        text-align: center;
-        font-size: 0.75rem;
-        color: #d1d5db;
-        font-weight: 500;
-        letter-spacing: 0.25px;
-        text-transform: uppercase;
-    ">
-        PathPulse Made by: Hadi Armughan(23k-0041) - Aliyan Munawar(23I-0641)
+st.markdown("""
+<div class="footer">
+    <p class="footer-text">
+        Made with ❤️ by Hadi Armughan (23k-0041) & Aliyan Munawar (23I-0641)
     </p>
-    """,
-    unsafe_allow_html=True,
-)
+    <p style="color: #52525b; font-size: 0.75rem; margin-top: 8px;">
+        PathPulse v2.0 — Advanced Hospital Navigation & ML Risk Prediction
+    </p>
+</div>
+""", unsafe_allow_html=True)

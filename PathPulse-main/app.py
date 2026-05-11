@@ -22,7 +22,7 @@ from navigation.grid import (
 )
 from navigation import astar, greedy_bfs
 
-# Import prediction modules
+# Import prediction modules - Advanced Version
 from prediction.preprocess import HEALTHY_DEFAULTS, FEATURE_LABELS
 from prediction.predict import predict_risk
 

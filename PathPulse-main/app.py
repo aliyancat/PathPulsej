@@ -117,96 +117,216 @@ def init_session_state() -> None:
 init_session_state()
 
 # ---------------------------------------------------------------------------
-# Visualization Helpers
+# Advanced Visualization Functions
 # ---------------------------------------------------------------------------
-def plot_hospital_grid(
+def get_base64_of_bin_file(bin_file: str) -> str:
+    """Convert image to base64 for inline embedding."""
+    bin_path: Path = Path(__file__).parent / bin_file
+    with open(bin_path, 'rb') as f:
+        data = f.read()
+    return base64.b64encode(data).decode()
+
+
+def plot_hospital_grid_advanced(
     path: Optional[List[Tuple[int, int]]] = None,
     explored: Optional[List[Tuple[int, int]]] = None,
     start_room: Optional[str] = None,
-    destination_room: Optional[str] = None
+    destination_room: Optional[str] = None,
+    theme: str = "neon"
 ) -> plt.Figure:
-    """Renders the hospital grid using Matplotlib."""
-    fig, ax = plt.subplots(figsize=(10, 10))
-    fig.patch.set_facecolor('#121212')
-    ax.set_facecolor('#121212')
+    """Renders the hospital grid with advanced customization."""
+    theme_colors = GRAPH_THEMES.get(theme, GRAPH_THEMES["neon"])
     
-    # Base grid: 0=walkable, 1=wall
-    cmap = ListedColormap(['#1e1e1e', '#050505']) # Walkable: elevated dark, Wall: abyss black
-    ax.imshow(HOSPITAL_GRID, cmap=cmap)
+    fig, ax = plt.subplots(figsize=(12, 12))
+    fig.patch.set_facecolor(theme_colors["walkable"])
+    ax.set_facecolor(theme_colors["walkable"])
+    
+    cmap_custom = ListedColormap([theme_colors["walkable"], theme_colors["wall"]])
+    ax.imshow(HOSPITAL_GRID, cmap=cmap_custom)
+    
+    if st.session_state.get("show_grid", True):
+        ax.set_xticks(np.arange(-.5, GRID_COLS, 1), minor=True)
+        ax.set_yticks(np.arange(-.5, GRID_ROWS, 1), minor=True)
+        ax.grid(which="minor", color=theme_colors["grid_line"], linestyle='-', linewidth=0.5)
+        ax.tick_params(which="minor", bottom=False, left=False)
+    
+    ax.set_xticks([])
+    ax.set_yticks([])
 
-    # Plot all rooms lightly
-    for room, (r, c) in st.session_state["custom_rooms"].items():
-        color = ROOM_COLORS.get(room, '#ffffff')
-        ax.plot(c, r, marker='s', color=color, markersize=16, alpha=0.3)
-        # Add text label above the cell
-        label_text = room.replace(" ", "\n")  # Wrap text for long names
-        ax.text(c, r - 0.75, label_text, color='#ffffff', fontsize=10, ha='center', va='bottom', weight='bold', 
-                bbox=dict(facecolor='#050505', alpha=0.85, edgecolor=color, boxstyle='round,pad=0.3'))
+    if st.session_state.get("show_room_markers", True):
+        for room, (r, c) in st.session_state["custom_rooms"].items():
+            color = ROOM_COLORS.get(room, '#ffffff')
+            ax.plot(c, r, marker='s', color=color, 
+                   markersize=st.session_state.get("node_size", 18), 
+                   alpha=0.4, zorder=2)
 
-    # Highlight Explored Nodes
-    if explored:
+    if st.session_state.get("show_explored", True) and explored:
         ex_r = [node[0] for node in explored]
         ex_c = [node[1] for node in explored]
-        ax.plot(ex_c, ex_r, marker='s', color='#4a90e2', markersize=8, alpha=0.6, linestyle='None')
+        ax.scatter(ex_c, ex_r, marker='s', c=theme_colors["explored"], 
+                  s=st.session_state.get("node_size", 18) * 0.5,
+                  alpha=st.session_state.get("explored_alpha", 0.6),
+                  zorder=3)
 
-    # Highlight Path
-    if path:
+    if st.session_state.get("show_path", True) and path:
         path_r = [node[0] for node in path]
         path_c = [node[1] for node in path]
-        ax.plot(path_c, path_r, color='#ff5252', linewidth=4, zorder=3)
-        ax.plot(path_c, path_r, marker='o', color='#ff5252', markersize=5, linestyle='None', zorder=4)
+        ax.plot(path_c, path_r, color=theme_colors["path_glow"], 
+               linewidth=st.session_state.get("path_width", 4) + 2, 
+               alpha=0.3, zorder=3)
+        ax.plot(path_c, path_r, color=theme_colors["path"], 
+               linewidth=st.session_state.get("path_width", 4), 
+               zorder=4)
+        ax.scatter(path_c, path_r, marker='o', c=theme_colors["path"], 
+                  s=st.session_state.get("node_size", 18) * 0.6,
+                  zorder=5, edgecolors='white', linewidths=1)
 
-    # Highlight Start and End tightly
     start_room = start_room or START_ROOM
     start_r, start_c = st.session_state["custom_rooms"][start_room]
-    ax.plot(start_c, start_r, marker='s', color=ROOM_COLORS.get(start_room, '#ffffff'), markersize=18, markeredgecolor='white', markeredgewidth=2, zorder=5, label=start_room)
+    ax.scatter([start_c], [start_r], marker='s', c=theme_colors["start"],
+              s=st.session_state.get("node_size", 18) * 2,
+              edgecolors='white', linewidths=3, zorder=6)
+    ax.annotate('START', (start_c, start_r), xytext=(start_c, start_r-1.2),
+               ha='center', va='top', fontsize=10, fontweight='bold',
+               color=theme_colors["start"],
+               bbox=dict(boxstyle='round,pad=0.3', facecolor=theme_colors["wall"], 
+                        edgecolor=theme_colors["start"], alpha=0.9))
     
     if destination_room:
         dest_r, dest_c = st.session_state["custom_rooms"][destination_room]
-        ax.plot(dest_c, dest_r, marker='s', color=ROOM_COLORS[destination_room], markersize=18, markeredgecolor='white', markeredgewidth=2, zorder=5, label=destination_room)
+        ax.scatter([dest_c], [dest_r], marker='s', c=theme_colors["end"],
+                  s=st.session_state.get("node_size", 18) * 2,
+                  edgecolors='white', linewidths=3, zorder=6)
+        ax.annotate('GOAL', (dest_c, dest_r), xytext=(dest_c, dest_r-1.2),
+                   ha='center', va='top', fontsize=10, fontweight='bold',
+                   color=theme_colors["end"],
+                   bbox=dict(boxstyle='round,pad=0.3', facecolor=theme_colors["wall"], 
+                            edgecolor=theme_colors["end"], alpha=0.9))
 
-    # Grid lines and formatting
-    ax.set_xticks(np.arange(-.5, 20, 1), minor=True)
-    ax.set_yticks(np.arange(-.5, 20, 1), minor=True)
-    ax.grid(which="minor", color="#362d59", linestyle='-', linewidth=1)
-    ax.tick_params(which="minor", bottom=False, left=False)
-    ax.set_xticks([])
-    ax.set_yticks([])
+    if st.session_state.get("show_labels", True):
+        for room, (r, c) in st.session_state["custom_rooms"].items():
+            if room not in [start_room, destination_room]:
+                label_text = room.replace(" ", "\n")
+                ax.text(c, r - 0.85, label_text, color='#ffffff', 
+                       fontsize=8, ha='center', va='bottom', weight='bold', 
+                       bbox=dict(facecolor=theme_colors["wall"], alpha=0.85, 
+                                edgecolor=ROOM_COLORS.get(room, '#ffffff'), 
+                                boxstyle='round,pad=0.2'))
+
+    if st.session_state.get("show_legend", True):
+        legend_elements = [
+            plt.Line2D([0], [0], marker='s', color='w', markerfacecolor=theme_colors["start"], 
+                      markersize=10, label='Start', linestyle='None'),
+            plt.Line2D([0], [0], marker='s', color='w', markerfacecolor=theme_colors["end"], 
+                      markersize=10, label='Destination', linestyle='None'),
+        ]
+        if st.session_state.get("show_explored", True):
+            legend_elements.append(
+                plt.Line2D([0], [0], marker='s', color='w', markerfacecolor=theme_colors["explored"], 
+                          markersize=8, alpha=0.6, label='Explored', linestyle='None')
+            )
+        if st.session_state.get("show_path", True):
+            legend_elements.append(
+                plt.Line2D([0], [0], color=theme_colors["path"], linewidth=3, label='Path')
+            )
+        
+        ax.legend(handles=legend_elements, loc='upper right', frameon=True, 
+                 facecolor=theme_colors["wall"], edgecolor=theme_colors["grid_line"],
+                 labelcolor='#ffffff', framealpha=0.95, fontsize=9)
     
-    # Legend
-    ax.legend(loc='upper right', frameon=True, facecolor='#050505', edgecolor='#262626', labelcolor='#ffffff', title_fontproperties={'weight':'bold'}, framealpha=0.9)
-    
-    # Ensure static layout bounds so the image size never fluctuates
-    fig.subplots_adjust(left=0.05, right=0.95, top=0.95, bottom=0.05)
+    fig.subplots_adjust(left=0.02, right=0.98, top=0.98, bottom=0.02)
     return fig
 
 
-def plot_feature_importance(importances: Dict[str, float]) -> plt.Figure:
-    """Plots a horizontal bar chart of feature importances."""
-    fig, ax = plt.subplots(figsize=(8, 5))
-    fig.patch.set_facecolor('#121212')
-    ax.set_facecolor('#121212')
 
-    # Sort features
+def plot_feature_importance_advanced(importances: Dict[str, float], theme: str = "neon") -> plt.Figure:
+    """Plots an advanced horizontal bar chart with value labels."""
+    theme_colors = GRAPH_THEMES.get(theme, GRAPH_THEMES["neon"])
+    
+    fig, ax = plt.subplots(figsize=(10, 6))
+    fig.patch.set_facecolor('#0a0a0f')
+    ax.set_facecolor('#0a0a0f')
+
+
     sorted_items = sorted(importances.items(), key=lambda x: x[1])
     features = [item[0] for item in sorted_items]
     scores = [item[1] for item in sorted_items]
     labels = [FEATURE_LABELS.get(f, f) for f in features]
-
-    bars = ax.barh(labels, scores, color='#2a2a2a')
     
-    # Top 3 get neon crimson accent
-    for i in range(-1, -4, -1):
-        if len(bars) >= abs(i):
-            bars[i].set_color('#ff2a2a')
+    max_score = max(scores) if scores else 1
+    normalized_scores = [s / max_score for s in scores]
 
-    ax.set_xlabel('Importance Score', color='#e5e7eb', fontsize=12, fontweight='bold')
-    ax.tick_params(axis='x', colors='#e5e7eb')
-    ax.tick_params(axis='y', colors='#e5e7eb', labelsize=10)
-    ax.spines['bottom'].set_color('#262626')
-    ax.spines['left'].set_color('#262626')
+    colors = []
+    for score in normalized_scores:
+        if score > 0.8:
+            colors.append(theme_colors["path"])
+        elif score > 0.5:
+            colors.append(theme_colors["explored"])
+        else:
+            colors.append('#374151')
+
+    bars = ax.barh(labels, scores, color=colors, height=0.7, edgecolor='none')
+    
+    for bar, score in zip(bars, scores):
+        width = bar.get_width()
+        ax.text(width + 0.01, bar.get_y() + bar.get_height()/2, 
+               f'{score:.3f}', va='center', ha='left', 
+               color='#ffffff', fontsize=9, fontweight='bold')
+
+
+    ax.set_xlabel('Importance Score', color='#a1a1aa', fontsize=11, fontweight='bold')
+    ax.tick_params(axis='x', colors='#a1a1aa', labelsize=10)
+    ax.tick_params(axis='y', colors='#ffffff', labelsize=10)
+    ax.spines['bottom'].set_color('#1f2937')
+    ax.spines['left'].set_color('#1f2937')
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
+    ax.xaxis.grid(True, color='#1f2937', linestyle='--', linewidth=0.5)
+    ax.set_xlim(0, max(scores) * 1.15 if scores else 1)
+    
+    plt.tight_layout()
+    return fig
+
+
+def plot_risk_gauge(probability: float) -> plt.Figure:
+    """Create a visual risk gauge with polar projection."""
+    fig, ax = plt.subplots(figsize=(8, 4), subplot_kw={'projection': 'polar'})
+    fig.patch.set_facecolor('#0a0a0f')
+    ax.set_facecolor('#0a0a0f')
+    
+    theta = np.linspace(0.5 * np.pi, 2.5 * np.pi, 100)
+    ax.fill_between(theta, 0.3, 0.35, color='#1f2937', alpha=0.5)
+    
+    prob_theta = 0.5 * np.pi + probability * np.pi
+    
+    if probability < 0.3:
+        color = '#10b981'
+    elif probability < 0.6:
+        color = '#f59e0b'
+    else:
+        color = '#ef4444'
+    
+    ax.annotate('', xy=(prob_theta, 0.33), xytext=(0.5 * np.pi, 0.1),
+               arrowprops=dict(arrowstyle='->', color=color, lw=3))
+    
+    ax.fill_between(np.linspace(0.5 * np.pi, 1.83 * np.pi, 50), 0.28, 0.32, 
+                   color='#10b981', alpha=0.3)
+    ax.fill_between(np.linspace(1.83 * np.pi, 2.17 * np.pi, 50), 0.28, 0.32, 
+                   color='#f59e0b', alpha=0.3)
+    ax.fill_between(np.linspace(2.17 * np.pi, 2.5 * np.pi, 50), 0.28, 0.32, 
+                   color='#ef4444', alpha=0.3)
+    
+    ax.text(0.5 * np.pi, 0.15, '0%', ha='center', va='top', color='#a1a1aa', fontsize=10)
+    ax.text(2.5 * np.pi, 0.15, '100%', ha='center', va='top', color='#a1a1aa', fontsize=10)
+    ax.text(np.pi, 0.15, '50%', ha='center', va='top', color='#a1a1aa', fontsize=10)
+    
+    ax.text(np.pi, 0.5, f'{probability*100:.1f}%', ha='center', va='center', 
+           color=color, fontsize=20, fontweight='bold')
+    ax.text(np.pi, 0.4, 'Risk Level', ha='center', va='center', 
+           color='#71717a', fontsize=10)
+    
+    ax.set_ylim(0, 0.5)
+    ax.axis('off')
     
     plt.tight_layout()
     return fig

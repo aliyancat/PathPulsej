@@ -1,9 +1,8 @@
 """
-PathPulse — Intelligent Hospital Navigation & Heart Disease Prediction
-======================================================================
-Main Streamlit entry point. Configures the page layout, loads custom
-styling, initializes session state, and routes users between the
-Navigation and Risk Prediction tabs.
+PathPulse — Advanced Hospital Navigation & Heart Disease Prediction
+====================================================================
+Enhanced Streamlit app with advanced UI, customizable graph 
+visualizations, color themes, and smooth animations.
 """
 
 import streamlit as st
@@ -18,19 +17,51 @@ import time
 # Import navigation modules
 from navigation.grid import (
     HOSPITAL_GRID, ROOMS, START_ROOM, START_COORDS, 
-    ROOM_COLORS, get_destination_rooms
+    ROOM_COLORS, get_destination_rooms, GRID_ROWS, GRID_COLS
 )
 from navigation import astar, greedy_bfs
 
 # Import prediction modules - Advanced Version
-from prediction.preprocess import HEALTHY_DEFAULTS, FEATURE_LABELS
+from prediction.preprocess import HEALTHY_DEFAULTS, FEATURE_LABELS, ALL_FEATURE_NAMES
 from prediction.predict import predict_risk
 
 # ---------------------------------------------------------------------------
-# Page Configuration (MUST be the first Streamlit command)
+# Graph Color Themes
+# ---------------------------------------------------------------------------
+GRAPH_THEMES = {
+    "neon": {
+        "walkable": "#1a1a25", "wall": "#050508", "path": "#6366f1",
+        "path_glow": "#8b5cf6", "explored": "#f59e0b", "start": "#10b981",
+        "end": "#ef4444", "grid_line": "rgba(99, 102, 241, 0.15)",
+    },
+    "fire": {
+        "walkable": "#1a0a0a", "wall": "#050303", "path": "#ef4444",
+        "path_glow": "#f97316", "explored": "#fb923c", "start": "#22c55e",
+        "end": "#eab308", "grid_line": "rgba(239, 68, 68, 0.15)",
+    },
+    "ice": {
+        "walkable": "#0a1a1a", "wall": "#030505", "path": "#06b6d4",
+        "path_glow": "#22d3ee", "explored": "#67e8f9", "start": "#10b981",
+        "end": "#a78bfa", "grid_line": "rgba(6, 182, 212, 0.15)",
+    },
+    "cyberpunk": {
+        "walkable": "#0f0f1a", "wall": "#050510", "path": "#ec4899",
+        "path_glow": "#f472b6", "explored": "#fbbf24", "start": "#34d399",
+        "end": "#818cf8", "grid_line": "rgba(236, 72, 153, 0.2)",
+    },
+    "matrix": {
+        "walkable": "#0a0f0a", "wall": "#030503", "path": "#22c55e",
+        "path_glow": "#4ade80", "explored": "#86efac", "start": "#06b6d4",
+        "end": "#f97316", "grid_line": "rgba(34, 197, 94, 0.15)",
+    },
+}
+
+
+# ---------------------------------------------------------------------------
+# Page Configuration
 # ---------------------------------------------------------------------------
 st.set_page_config(
-    page_title="PathPulse — Hospital Navigation & Risk Prediction",
+    page_title="PathPulse — Advanced Hospital Navigation",
     page_icon="page_logo.png",
     layout="wide",
     initial_sidebar_state="collapsed",
@@ -40,7 +71,7 @@ st.set_page_config(
 # Custom CSS Injection
 # ---------------------------------------------------------------------------
 def load_custom_css() -> None:
-    """Load and inject the custom Sentry-inspired dark theme CSS."""
+    """Load and inject the custom dark theme CSS."""
     css_path: Path = Path(__file__).parent / "assets" / "styles.css"
     if css_path.exists():
         with open(css_path, "r", encoding="utf-8") as css_file:
@@ -55,7 +86,7 @@ load_custom_css()
 # Session State Initialization
 # ---------------------------------------------------------------------------
 def init_session_state() -> None:
-    """Initialize all session state variables used across tabs."""
+    """Initialize all session state variables."""
     destinations = get_destination_rooms()
     defaults: dict = {
         "nav_start": START_ROOM,
@@ -66,7 +97,18 @@ def init_session_state() -> None:
         "pred_submitted": False,
         "custom_rooms": dict(ROOMS),
         "animate_next": False,
-        "anim_delay": 0,
+        "anim_delay": 50,
+        # Graph customization options
+        "show_explored": True,
+        "show_path": True,
+        "show_labels": True,
+        "show_grid": True,
+        "show_room_markers": True,
+        "node_size": 18,
+        "path_width": 4,
+        "explored_alpha": 0.6,
+        "color_theme": "neon",
+        "show_legend": True,
     }
     for key, value in defaults.items():
         if key not in st.session_state:

@@ -334,12 +334,6 @@ def plot_risk_gauge(probability: float) -> plt.Figure:
 # ---------------------------------------------------------------------------
 # App Header
 # ---------------------------------------------------------------------------
-def get_base64_of_bin_file(bin_file):
-    bin_path = Path(__file__).parent / bin_file
-    with open(bin_path, 'rb') as f:
-        data = f.read()
-    return base64.b64encode(data).decode()
-
 logo_base64 = get_base64_of_bin_file("pathpulse_logo.png")
 page_logo_base64 = get_base64_of_bin_file("page_logo.png")
 
@@ -351,16 +345,21 @@ st.markdown(
         <img src="data:image/png;base64,{page_logo_base64}" class="header-logo" alt="Logo" />
         <span class="header-title">Path<span style="font-weight: 700;">Pulse</span></span>
     </div>
-    <div class="hero-container" style="text-align: center; margin-bottom: 2rem; padding-top: 1rem; position: relative; z-index: 10;">
-        <div class="liquid-glass-logo-container">
+    <div style="text-align: center; margin-bottom: 2rem; padding-top: 0.5rem; position: relative; z-index: 10;">
+        <div class="liquid-glass-logo-container animate-float">
             <img src="data:image/png;base64,{logo_base64}" class="liquid-glass-logo" alt="PathPulse Logo" />
         </div>
-        <h1 class="hero-text-glow" style="margin-top: 1.5rem; font-size: 2.5rem; font-weight: 800; letter-spacing: 2px; color: white;">
-            PATHPULSE NEURAL <span style="color: #ff2a2a; text-shadow: 0 0 15px rgba(255,42,42,0.8);">ENGINE</span>
+        <h1 style="margin-top: 1.5rem; font-size: 2.2rem; font-weight: 800; letter-spacing: 1px; color: white;">
+            Intelligent Hospital Navigation
         </h1>
-        <p style="font-size: 1.15rem; color: #d1d5db; max-width: 600px; margin: 0.5rem auto 2.5rem; opacity: 0.8;">
-            Advanced Hospital Navigation & ML Risk Prediction
+        <p style="font-size: 1rem; color: #a1a1aa; max-width: 500px; margin: 0.5rem auto 1.5rem;">
+            Advanced pathfinding algorithms & ML-powered risk assessment
         </p>
+        <div style="display: flex; gap: 12px; justify-content: center;">
+            <span class="badge badge-primary">A* Search</span>
+            <span class="badge badge-success">Random Forest</span>
+            <span class="badge badge-danger">Real-time Animation</span>
+        </div>
     </div>
     """,
     unsafe_allow_html=True,
@@ -369,7 +368,7 @@ st.markdown(
 # ---------------------------------------------------------------------------
 # Primary Tab Layout
 # ---------------------------------------------------------------------------
-tab_nav, tab_pred = st.tabs([" Navigation", " Risk Prediction"])
+tab_nav, tab_pred = st.tabs([" 🚗 Navigation", " ❤️ Risk Prediction"])
 
 # -- Navigation Tab --------------------------------------------------------
 with tab_nav:

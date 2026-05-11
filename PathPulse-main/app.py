@@ -613,7 +613,7 @@ with tab_nav:
                         )
                         plot_placeholder.pyplot(fig)
                         plt.close(fig)
-                            time.sleep(delay_sec)
+                        time.sleep(delay_sec)
                 
                 progress_bar.progress(100)
                 status_text.text("✅ Pathfinding complete!")
